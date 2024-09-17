@@ -33,6 +33,7 @@ impl State {
 
         initscr();
         noecho();
+        curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
         raw();
         cbreak();
         refresh();
@@ -127,7 +128,7 @@ impl State {
         //box_(self.parent_win.win, 0, 0);
         //box_(self.mid_win.win, 0, 0);
         // clear();
-        mvwprintw(stdscr(), 0, 1, &self.parent_win.path.to_string_lossy());
+        mvwprintw(stdscr(), 0, 1, &self.mid_win.path.to_string_lossy());
         self.mid_win.display();
         self.parent_win.display();
         self.child_win.display();

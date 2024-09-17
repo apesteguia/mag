@@ -46,6 +46,9 @@ impl MagWindow {
         match &self.dir {
             MagEntry::Dir(d) => {
                 for (c, i) in d.items.iter().enumerate() {
+                    if c as i32 > self.dimensions.y - 5 {
+                        break;
+                    }
                     match i {
                         MagEntry::File(f) => {
                             mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap())
