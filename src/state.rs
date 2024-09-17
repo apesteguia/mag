@@ -160,7 +160,8 @@ impl State {
     }
 
     fn handle_movment_down(&mut self) -> std::io::Result<()> {
-        if self.mid_win.idx < self.mid_win.dir.get_folder().unwrap().items.len() {
+        let len = self.mid_win.dir.get_folder().unwrap().items.len();
+        if self.mid_win.idx < len && len > 1 {
             self.mid_win.idx += 1;
             self.child_win.change_dir(
                 self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].get_path(),
