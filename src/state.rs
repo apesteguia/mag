@@ -1,6 +1,5 @@
 use std::{
     env,
-    os::unix::thread,
     path::{Path, PathBuf},
     sync::mpsc,
     thread::{sleep, spawn},
@@ -17,9 +16,9 @@ const START_TOP: i32 = 1;
 
 #[derive(Debug)]
 pub struct State {
-    pub left_win: MagWindow,
+    pub child_win: MagWindow,
     pub mid_win: MagWindow,
-    pub right_win: MagWindow,
+    pub parent_win: MagWindow,
     pub path: PathBuf,
     pub dim: Pos<i32>,
 }
@@ -45,35 +44,38 @@ impl State {
         init_pair(5, COLOR_RED, COLOR_WHITE);
 
         let w = getmaxx(stdscr());
-        let mut h = getmaxy(stdscr());
-        h -= 3;
+        let h = getmaxy(stdscr()) - 3;
 
-        let w_right = (w as f32 * W_RIGHT) as i32;
+        let w_left = (w as f32 * W_RIGHT) as i32;
         let w_middle = (w as f32 * W_MIDDLE) as i32;
-        let w_left = (w as f32 * W_LEFT) as i32;
+        let w_right = (w as f32 * W_LEFT) as i32;
 
         let dim = Pos::new(h, w);
 
-        let left_win = MagWindow::new(
+        let parent_win = MagWindow::new(
             &path,
             Pos::new(1, START_TOP),
-            Pos::new(w_middle, h - START_TOP),
-        );
+            Pos::new(w_right, h - START_TOP),
+        )
+        .fetch_return();
 
-        let right_win = MagWindow::new(
+        let child_win = MagWindow::new(
             &path,
             Pos::new(1, START_TOP),
-            Pos::new(w_middle, h - START_TOP),
-        );
+            Pos::new(w_left, h - START_TOP),
+        )
+        .fetch_return();
+
         let mid_win = MagWindow::new(
             &path,
             Pos::new(1, START_TOP),
             Pos::new(w_middle, h - START_TOP),
-        );
+        )
+        .fetch_return();
 
         Ok(Self {
-            left_win,
-            right_win,
+            parent_win,
+            child_win,
             mid_win,
             path,
             dim,
@@ -93,6 +95,7 @@ impl State {
         nodelay(stdscr(), true);
 
         let mut ch = getch();
+        self.display();
         while ch != 113 {
             // Si no hay teclas presionadas, `getch()` devolverá ERR (-1)
             if let Ok(value) = rx.try_recv() {
@@ -114,10 +117,16 @@ impl State {
 
     fn display(&mut self) {
         self.resize();
-        clear();
+        //box_(self.child_win.win, 0, 0);
+        //box_(self.parent_win.win, 0, 0);
+        //box_(self.mid_win.win, 0, 0);
+        // clear();
         refresh();
-        mvwprintw(stdscr(), 0, 1, &self.right_win.path.to_string_lossy());
-        //self.mid_win.display();
+        mvwprintw(stdscr(), 0, 1, &self.parent_win.path.to_string_lossy());
+        self.mid_win.display();
+        self.parent_win.display();
+        self.child_win.display();
+        refresh();
     }
 
     fn resize(&mut self) {
@@ -129,25 +138,26 @@ impl State {
             let w_middle = (w as f32 * W_MIDDLE) as i32;
             let w_left = (w as f32 * W_LEFT) as i32;
 
-            self.right_win
+            self.parent_win
                 .change_dim(Pos::new(1, START_TOP), Pos::new(w_right, h - START_TOP));
             self.mid_win.change_dim(
                 Pos::new(1 + w_right, START_TOP),
                 Pos::new(w_middle, h - START_TOP),
             );
-            self.left_win.change_dim(
+            self.child_win.change_dim(
                 Pos::new(1 + w_right + w_middle, START_TOP),
                 Pos::new(w_left, h - START_TOP),
             );
             clear();
             refresh();
+            wrefresh(self.mid_win.win);
         }
     }
 
     pub fn exit(&mut self) {
-        delwin(self.left_win.win);
+        delwin(self.child_win.win);
         delwin(self.mid_win.win);
-        delwin(self.right_win.win);
+        delwin(self.parent_win.win);
         endwin();
     }
 }

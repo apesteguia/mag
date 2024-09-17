@@ -6,7 +6,7 @@ use std::{
 use ncurses::*;
 
 use crate::{
-    filesys::{MagEntry, MagFolder},
+    filesys::{MagEntry, MagFile, MagFolder},
     pos::Pos,
 };
 
@@ -18,7 +18,7 @@ pub struct MagWindow {
     pub idx: usize,
     pub coord: Pos<i32>,
     pub my_pos: Pos<i32>,
-    pub dir: MagFolder,
+    pub dir: MagEntry,
 }
 
 impl MagWindow {
@@ -28,7 +28,7 @@ impl MagWindow {
         let my_pos = Pos::new(0, 0);
 
         let win = newwin(dimensions.y, dimensions.x, coord.y, coord.x);
-        let dir = MagFolder::new(&path);
+        let dir = MagEntry::Dir(MagFolder::new(&path));
 
         Self {
             path,
@@ -44,15 +44,64 @@ impl MagWindow {
     //Debug display
     pub fn display(&self) {
         let mut c = 0;
-        let v = self.dir.get_entries().unwrap();
-        for i in v {
-            match i {
-                MagEntry::File(f) => mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap()),
-                MagEntry::Dir(f) => mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap()),
-            };
-            c += 1;
-        }
+        match &self.dir {
+            MagEntry::Dir(d) => {
+                for i in d.items.iter() {
+                    match i {
+                        MagEntry::File(f) => {
+                            mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap())
+                        }
+                        MagEntry::Dir(f) => {
+                            mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap())
+                        }
+                    };
+                    c += 1;
+                }
+            }
+            MagEntry::File(f) => {
+                let s = f.file_contents();
+                if s.is_empty() {
+                    mvwprintw(self.win, 1, 1, "Empty File");
+                } else {
+                    let v: Vec<&str> = s.split('\n').collect();
+                    for (i, st) in v.iter().enumerate() {
+                        mvwprintw(self.win, i as i32, 1, st);
+                    }
+                }
+            }
+        };
+        mvwprintw(self.win, 1, 1, "asdf");
         wrefresh(self.win);
+    }
+
+    pub fn fetch_return(self) -> Self {
+        match self.dir {
+            MagEntry::File(f) => {
+                // Crea una nueva instancia de MagEntry::File con el contenido actualizado
+                let updated_file = MagFile::new(&f.data.path);
+                Self {
+                    dir: MagEntry::File(updated_file),
+                    ..self // Copia los demás campos de self
+                }
+            }
+            MagEntry::Dir(d) => {
+                // Crea una nueva instancia de MagEntry::Dir con el contenido actualizado
+                let mut updated_folder = d.clone(); // Asegúrate de que MagFolder implemente Clone
+                updated_folder.get_entries(); // Actualiza las entradas del directorio
+
+                Self {
+                    dir: MagEntry::Dir(updated_folder),
+                    ..self // Copia los demás campos de self
+                }
+            }
+        }
+    }
+
+    pub fn fetch(&mut self) {
+        match &self.dir {
+            MagEntry::File(f) => self.dir = MagEntry::File(MagFile::new(&f.data.path)),
+            MagEntry::Dir(d) => self.dir = MagEntry::Dir(d.clone()),
+        }
     }
 
     pub fn change_dim(&mut self, coord: Pos<i32>, dim: Pos<i32>) {

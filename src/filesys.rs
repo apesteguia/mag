@@ -59,17 +59,48 @@ impl MagFile {
 #[derive(Debug, Clone)]
 pub struct MagFolder {
     pub data: MagItem,
+    pub items: Vec<MagEntry>,
 }
 
 impl MagFolder {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         let path = path.as_ref().to_owned();
         let data = MagItem::new(&path);
+        let items = Vec::new();
 
-        Self { data }
+        Self { data, items }
     }
 
-    pub fn get_entries(&self) -> Option<Vec<MagEntry>> {
+    pub fn get_entries(&mut self) {
+        self.items.clear();
+        let entries = match fs::read_dir(&self.data.path) {
+            Ok(entries) => entries,
+            Err(_) => return,
+        };
+
+        for entry in entries {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(_) => return,
+            };
+            let path = entry.path();
+
+            let metadata = match fs::metadata(entry.path()) {
+                Ok(m) => Some(m),
+                Err(_) => None,
+            };
+
+            if let Some(metadata) = metadata {
+                if metadata.is_file() {
+                    self.items.push(MagEntry::File(MagFile::new(&path)));
+                } else {
+                    self.items.push(MagEntry::Dir(MagFolder::new(&path)));
+                }
+            }
+        }
+    }
+
+    pub fn return_entries(&self) -> Option<Vec<MagEntry>> {
         let mut v: Vec<MagEntry> = Vec::new();
 
         let entries = match fs::read_dir(&self.data.path) {
@@ -118,21 +149,5 @@ mod tests {
         let s = f.file_contents();
         println!("{s}");
         assert!(s.len() > 0);
-    }
-
-    #[test]
-    fn test_dir() {
-        let d = MagFolder::new("/home/mikel/");
-        let entries = match d.get_entries() {
-            Some(v) => v,
-            None => Vec::new(),
-        };
-
-        for entry in entries {
-            match entry {
-                MagEntry::Dir(folder) => println!("Directory: {:?}", folder.data.path),
-                MagEntry::File(file) => println!("File: {:?}", file.data.path),
-            }
-        }
     }
 }
