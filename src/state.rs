@@ -1,6 +1,10 @@
 use std::{
     env,
+    os::unix::thread,
     path::{Path, PathBuf},
+    sync::mpsc,
+    thread::{sleep, spawn},
+    time::Duration,
 };
 
 use crate::{pos::Pos, ui::MagWindow};
@@ -77,14 +81,32 @@ impl State {
     }
 
     pub fn update(&mut self) -> std::io::Result<&mut Self> {
-        self.display();
+        let (tx, rx) = mpsc::channel();
+        let mut count = 0;
+
+        spawn(move || loop {
+            sleep(Duration::from_secs(1));
+            tx.send(count).unwrap();
+            count += 1;
+        });
+
+        nodelay(stdscr(), true);
+
         let mut ch = getch();
         while ch != 113 {
+            // Si no hay teclas presionadas, `getch()` devolverá ERR (-1)
+            if let Ok(value) = rx.try_recv() {
+                if value > 100 {
+                    return Ok(self);
+                }
+            }
+
             match ch {
                 _ => {}
             }
-            //self.display();
+
             ch = getch();
+            sleep(Duration::from_millis(100));
         }
 
         Ok(self)
