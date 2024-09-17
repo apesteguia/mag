@@ -1,4 +1,5 @@
 pub mod filesys;
+pub mod pos;
 pub mod state;
 pub mod ui;
 
