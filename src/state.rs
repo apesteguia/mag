@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{pos::Pos, ui::MagWindow};
+use crate::{filesys::MagFolder, pos::Pos, ui::MagWindow};
 use ncurses::*;
 
 const W_RIGHT: f32 = 0.2;
@@ -53,16 +53,9 @@ impl State {
         let dim = Pos::new(h, w);
 
         let parent_win = MagWindow::new(
-            &path,
+            &path.parent().unwrap(),
             Pos::new(1, START_TOP),
             Pos::new(w_right, h - START_TOP),
-        )
-        .fetch_return();
-
-        let child_win = MagWindow::new(
-            &path,
-            Pos::new(1, START_TOP),
-            Pos::new(w_left, h - START_TOP),
         )
         .fetch_return();
 
@@ -70,6 +63,13 @@ impl State {
             &path,
             Pos::new(1, START_TOP),
             Pos::new(w_middle, h - START_TOP),
+        )
+        .fetch_return();
+
+        let child_win = MagWindow::new(
+            &mid_win.dir.get_folder_path(0).unwrap(),
+            Pos::new(1, START_TOP),
+            Pos::new(w_left, h - START_TOP),
         )
         .fetch_return();
 
@@ -84,12 +84,17 @@ impl State {
 
     pub fn update(&mut self) -> std::io::Result<&mut Self> {
         let (tx, rx) = mpsc::channel();
-        let mut count = 0;
+        let mut thx_dir = MagFolder::new(&self.child_win.path);
+        let mut size = self.child_win.dir.get_folder().unwrap().items.len();
+        thx_dir.get_entries();
 
         spawn(move || loop {
             sleep(Duration::from_secs(1));
-            tx.send(count).unwrap();
-            count += 1;
+            thx_dir.get_entries();
+            if thx_dir.items.len() != size {
+                tx.send(21312).unwrap();
+                size = thx_dir.items.len();
+            }
         });
 
         nodelay(stdscr(), true);
@@ -100,7 +105,8 @@ impl State {
             // Si no hay teclas presionadas, `getch()` devolverá ERR (-1)
             if let Ok(value) = rx.try_recv() {
                 if value > 100 {
-                    return Ok(self);
+                    self.child_win.fetch();
+                    self.display();
                 }
             }
 
@@ -121,7 +127,6 @@ impl State {
         //box_(self.parent_win.win, 0, 0);
         //box_(self.mid_win.win, 0, 0);
         // clear();
-        refresh();
         mvwprintw(stdscr(), 0, 1, &self.parent_win.path.to_string_lossy());
         self.mid_win.display();
         self.parent_win.display();

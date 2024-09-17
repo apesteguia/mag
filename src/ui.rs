@@ -43,19 +43,17 @@ impl MagWindow {
 
     //Debug display
     pub fn display(&self) {
-        let mut c = 0;
         match &self.dir {
             MagEntry::Dir(d) => {
-                for i in d.items.iter() {
+                for (c, i) in d.items.iter().enumerate() {
                     match i {
                         MagEntry::File(f) => {
-                            mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap())
+                            mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap())
                         }
                         MagEntry::Dir(f) => {
-                            mvwprintw(self.win, c, 2, f.data.path.to_str().unwrap())
+                            mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap())
                         }
                     };
-                    c += 1;
                 }
             }
             MagEntry::File(f) => {
@@ -65,12 +63,11 @@ impl MagWindow {
                 } else {
                     let v: Vec<&str> = s.split('\n').collect();
                     for (i, st) in v.iter().enumerate() {
-                        mvwprintw(self.win, i as i32, 1, st);
+                        mvwprintw(self.win, i as i32 + 2, 1, st);
                     }
                 }
             }
         };
-        mvwprintw(self.win, 1, 1, "asdf");
         wrefresh(self.win);
     }
 
@@ -100,7 +97,9 @@ impl MagWindow {
     pub fn fetch(&mut self) {
         match &self.dir {
             MagEntry::File(f) => self.dir = MagEntry::File(MagFile::new(&f.data.path)),
-            MagEntry::Dir(d) => self.dir = MagEntry::Dir(d.clone()),
+            MagEntry::Dir(d) => {
+                self.dir = MagEntry::Dir(MagFolder::new(&d.data.path).get_entries_return().unwrap())
+            }
         }
     }
 

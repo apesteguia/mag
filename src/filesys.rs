@@ -100,6 +100,36 @@ impl MagFolder {
         }
     }
 
+    pub fn get_entries_return(&mut self) -> Option<Self> {
+        self.items.clear();
+        let entries = match fs::read_dir(&self.data.path) {
+            Ok(entries) => entries,
+            Err(_) => return None,
+        };
+
+        for entry in entries {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(_) => return None,
+            };
+            let path = entry.path();
+
+            let metadata = match fs::metadata(entry.path()) {
+                Ok(m) => Some(m),
+                Err(_) => None,
+            };
+
+            if let Some(metadata) = metadata {
+                if metadata.is_file() {
+                    self.items.push(MagEntry::File(MagFile::new(&path)));
+                } else {
+                    self.items.push(MagEntry::Dir(MagFolder::new(&path)));
+                }
+            }
+        }
+        Some(self.clone())
+    }
+
     pub fn return_entries(&self) -> Option<Vec<MagEntry>> {
         let mut v: Vec<MagEntry> = Vec::new();
 
@@ -137,6 +167,35 @@ impl MagFolder {
 pub enum MagEntry {
     Dir(MagFolder),
     File(MagFile),
+}
+
+impl MagEntry {
+    pub fn get_folder(&self) -> Option<MagFolder> {
+        match self {
+            MagEntry::Dir(d) => Some(d.clone()),
+            MagEntry::File(_) => None,
+        }
+    }
+    pub fn get_file(&self) -> Option<MagFile> {
+        match self {
+            MagEntry::File(d) => Some(d.clone()),
+            MagEntry::Dir(_) => None,
+        }
+    }
+
+    pub fn get_path(&self) -> &PathBuf {
+        match self {
+            MagEntry::File(f) => &f.data.path,
+            MagEntry::Dir(d) => &d.data.path,
+        }
+    }
+
+    pub fn get_folder_path(&self, idx: usize) -> Option<PathBuf> {
+        match self {
+            MagEntry::Dir(d) => Some(d.items[idx].get_path().to_path_buf()),
+            MagEntry::File(_) => None,
+        }
+    }
 }
 
 #[cfg(test)]
