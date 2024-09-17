@@ -112,6 +112,13 @@ impl State {
             }
 
             match ch {
+                104 => self.handle_movment_left()?,
+                //j
+                106 => self.handle_movment_down()?,
+                //k
+                107 => self.handle_movment_up()?,
+                //l
+                108 => self.handle_movment_right()?,
                 _ => {}
             }
 
@@ -120,6 +127,19 @@ impl State {
         }
 
         Ok(self)
+    }
+
+    fn handle_movment_down(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+    fn handle_movment_up(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+    fn handle_movment_left(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+    fn handle_movment_right(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 
     fn display(&mut self) {

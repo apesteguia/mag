@@ -41,7 +41,7 @@ impl MagWindow {
         }
     }
 
-    //Debug display
+    // TODO: VERY VERBOSE FUNCION
     pub fn display(&self) {
         match &self.dir {
             MagEntry::Dir(d) => {
@@ -49,14 +49,30 @@ impl MagWindow {
                     if c as i32 > self.dimensions.y - 5 {
                         break;
                     }
-                    match i {
-                        MagEntry::File(f) => {
-                            mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap())
+
+                    if c == self.idx {
+                        // Activar formato bold
+                        wattron(self.win, A_BOLD());
+                        match i {
+                            MagEntry::File(f) => {
+                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                            }
+                            MagEntry::Dir(f) => {
+                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                            }
                         }
-                        MagEntry::Dir(f) => {
-                            mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap())
+                        // Desactivar formato bold
+                        wattroff(self.win, A_BOLD());
+                    } else {
+                        match i {
+                            MagEntry::File(f) => {
+                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                            }
+                            MagEntry::Dir(f) => {
+                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                            }
                         }
-                    };
+                    }
                 }
             }
             MagEntry::File(f) => {
@@ -70,7 +86,7 @@ impl MagWindow {
                     }
                 }
             }
-        };
+        }
         wrefresh(self.win);
     }
 
