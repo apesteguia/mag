@@ -160,7 +160,7 @@ impl State {
 
     fn handle_movment_down(&mut self) -> std::io::Result<()> {
         let len = self.mid_win.dir.get_folder().unwrap().items.len();
-        if self.mid_win.idx < len && len > 1 {
+        if self.mid_win.idx < len - 1 && len > 1 {
             self.mid_win.idx += 1;
             if self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].is_folder() {
                 self.child_win.change_dir(
@@ -172,7 +172,7 @@ impl State {
                     self.mid_win.dir.get_folder().expect("ESTOY AQUI").items[self.mid_win.idx]
                         .get_path(),
                     false,
-                )
+                );
             }
 
             wclear(self.child_win.win);

@@ -13,5 +13,9 @@ fn main() {
             .unwrap()
             .exit();
     */
-    let _ = State::new("/home/mikel/").unwrap().update().unwrap().exit();
+    let _ = State::new("/home/mikel/")
+        .expect("ERROR CREATING STATE IN MAIN")
+        .update()
+        .expect("ERROR IN UPDATE")
+        .exit();
 }

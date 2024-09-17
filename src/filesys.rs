@@ -1,10 +1,11 @@
 use std::{
     fs::{self, File, Metadata},
+    io::Read,
     os::unix::fs::FileExt,
     path::{Path, PathBuf},
 };
 
-const FILE_READ_BYTES: usize = 800;
+const FILE_READ_BYTES: usize = 250;
 
 #[derive(Debug, Clone)]
 pub struct MagItem {
@@ -40,6 +41,37 @@ impl MagFile {
         let path = path.as_ref().to_owned();
         let data = MagItem::new(&path);
         let content = String::with_capacity(FILE_READ_BYTES);
+
+        Self { data, content }
+    }
+
+    pub fn new_return<P: AsRef<Path>>(path: P) -> Self {
+        let path = path.as_ref().to_owned();
+        let data = MagItem::new(&path);
+        let mut content = String::with_capacity(FILE_READ_BYTES);
+        let mut buf = [0u8; FILE_READ_BYTES];
+
+        let mut file = match File::open(&path) {
+            Ok(f) => f,
+            Err(e) => {
+                content = format!("{} {}", "can't open file".to_string(), e);
+                return Self { data, content };
+            }
+        };
+
+        match file.read(&mut buf) {
+            Ok(_) => {
+                if let Ok(valid_string) = String::from_utf8(buf.to_vec()) {
+                    content = valid_string.trim_end_matches('\0').to_string();
+                } else {
+                    content = "Error al convertir el buffer a UTF-8".to_string();
+                }
+            }
+            Err(e) => {
+                content = format!("{} {}", "can't open file".to_string(), e);
+                return Self { data, content };
+            }
+        };
 
         Self { data, content }
     }

@@ -114,7 +114,7 @@ impl MagWindow {
         let path = path.as_ref().to_owned();
 
         match is_folder {
-            false => self.dir = MagEntry::File(MagFile::new(&path).file_contents_return().unwrap()),
+            false => self.dir = MagEntry::File(MagFile::new_return(&path)),
             true => self.dir = MagEntry::Dir(MagFolder::new(&path).get_entries_return().unwrap()),
         }
     }
