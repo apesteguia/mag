@@ -110,14 +110,12 @@ impl MagWindow {
         wrefresh(self.win);
     }
 
-    pub fn change_dir<P: AsRef<Path>>(&mut self, path: P) {
+    pub fn change_dir<P: AsRef<Path>>(&mut self, path: P, is_folder: bool) {
         let path = path.as_ref().to_owned();
 
-        match &self.dir {
-            MagEntry::File(_) => self.dir = MagEntry::File(MagFile::new(&path)),
-            MagEntry::Dir(_) => {
-                self.dir = MagEntry::Dir(MagFolder::new(&path).get_entries_return().unwrap())
-            }
+        match is_folder {
+            false => self.dir = MagEntry::File(MagFile::new(&path).file_contents_return().unwrap()),
+            true => self.dir = MagEntry::Dir(MagFolder::new(&path).get_entries_return().unwrap()),
         }
     }
 

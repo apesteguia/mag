@@ -120,7 +120,6 @@ impl State {
                     }
                 }
 
-                self.display();
                 match ch {
                     104 => self.handle_movment_left()?,
                     //j
@@ -163,9 +162,19 @@ impl State {
         let len = self.mid_win.dir.get_folder().unwrap().items.len();
         if self.mid_win.idx < len && len > 1 {
             self.mid_win.idx += 1;
-            self.child_win.change_dir(
-                self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].get_path(),
-            );
+            if self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].is_folder() {
+                self.child_win.change_dir(
+                    self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].get_path(),
+                    true,
+                );
+            } else {
+                self.child_win.change_dir(
+                    self.mid_win.dir.get_folder().expect("ESTOY AQUI").items[self.mid_win.idx]
+                        .get_path(),
+                    false,
+                )
+            }
+
             wclear(self.child_win.win);
             self.child_win.display();
             self.mid_win.display();
@@ -173,16 +182,21 @@ impl State {
 
         Ok(())
     }
+
     fn handle_movment_up(&mut self) -> std::io::Result<()> {
         if self.mid_win.idx > 0 {
             self.mid_win.idx -= 1;
+            wclear(self.child_win.win);
+            self.child_win.display();
             self.mid_win.display();
         }
         Ok(())
     }
+
     fn handle_movment_left(&mut self) -> std::io::Result<()> {
         Ok(())
     }
+
     fn handle_movment_right(&mut self) -> std::io::Result<()> {
         Ok(())
     }

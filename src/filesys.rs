@@ -62,6 +62,24 @@ impl MagFile {
             }
         };
     }
+
+    pub fn file_contents_return(&mut self) -> Option<Self> {
+        let mut buf = [0u8; FILE_READ_BYTES];
+        let file = match File::open(&self.data.path) {
+            Ok(f) => f,
+            Err(_) => {
+                return None;
+            }
+        };
+
+        match file.read_at(&mut buf, 0) {
+            Ok(_) => self.content = String::from_utf8_lossy(&buf).to_string(),
+            Err(_) => {
+                return None;
+            }
+        };
+        Some(self.clone())
+    }
 }
 
 #[derive(Debug, Clone)]
