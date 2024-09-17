@@ -6,5 +6,12 @@ pub mod state;
 pub mod ui;
 
 fn main() {
+    /*
+        let _ = State::new("/home/mikel/Escritorio/ruby/rb/rb/")
+            .unwrap()
+            .update()
+            .unwrap()
+            .exit();
+    */
     let _ = State::new("/home/mikel/").unwrap().update().unwrap().exit();
 }

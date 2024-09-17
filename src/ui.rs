@@ -52,7 +52,7 @@ impl MagWindow {
 
                     if c == self.idx {
                         // Activar formato bold
-                        wattron(self.win, A_BOLD());
+                        wattron(self.win, COLOR_PAIR(5) | A_BOLD());
                         match i {
                             MagEntry::File(f) => {
                                 mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
@@ -61,15 +61,16 @@ impl MagWindow {
                                 mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
                             }
                         }
-                        // Desactivar formato bold
-                        wattroff(self.win, A_BOLD());
+                        wattroff(self.win, COLOR_PAIR(5) | A_BOLD());
                     } else {
                         match i {
                             MagEntry::File(f) => {
                                 mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
                             }
                             MagEntry::Dir(f) => {
+                                wattron(self.win, COLOR_PAIR(4));
                                 mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                                wattroff(self.win, COLOR_PAIR(4));
                             }
                         }
                     }

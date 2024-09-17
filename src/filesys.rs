@@ -98,6 +98,7 @@ impl MagFolder {
                 }
             }
         }
+        self.sort_entries();
     }
 
     pub fn get_entries_return(&mut self) -> Option<Self> {
@@ -127,7 +128,20 @@ impl MagFolder {
                 }
             }
         }
+        self.sort_entries();
         Some(self.clone())
+    }
+
+    pub fn sort_entries(&mut self) {
+        self.items.sort_by(|a, b| {
+            let order_variant = a.variant_order().cmp(&b.variant_order());
+
+            if order_variant == std::cmp::Ordering::Equal {
+                a.path().cmp(b.path())
+            } else {
+                order_variant
+            }
+        });
     }
 
     pub fn return_entries(&self) -> Option<Vec<MagEntry>> {
@@ -194,6 +208,20 @@ impl MagEntry {
         match self {
             MagEntry::Dir(d) => Some(d.items[idx].get_path().to_path_buf()),
             MagEntry::File(_) => None,
+        }
+    }
+
+    pub fn variant_order(&self) -> i32 {
+        match self {
+            MagEntry::Dir(_) => 0,  // Los directorios primero
+            MagEntry::File(_) => 1, // Los archivos después
+        }
+    }
+
+    pub fn path(&self) -> &Path {
+        match self {
+            MagEntry::Dir(folder) => &folder.data.path,
+            MagEntry::File(file) => &file.data.path,
         }
     }
 }
