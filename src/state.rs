@@ -41,7 +41,7 @@ impl State {
         init_pair(1, COLOR_WHITE, COLOR_BLACK);
         init_pair(2, COLOR_WHITE, COLOR_BLUE);
         init_pair(3, COLOR_BLUE, COLOR_BLACK);
-        init_pair(4, COLOR_BLUE, COLOR_BLACK); //folder normal
+        init_pair(4, COLOR_BLUE, COLOR_BLACK); // folder normal
         init_pair(5, COLOR_BLACK, COLOR_BLUE); // folder selected
 
         let w = getmaxx(stdscr());
@@ -67,12 +67,21 @@ impl State {
         )
         .fetch_return();
 
-        let child_win = MagWindow::new(
-            &mid_win.dir.get_folder_path(0).unwrap(),
-            Pos::new(1, START_TOP),
-            Pos::new(w_left, h - START_TOP),
-        )
-        .fetch_return();
+        let child_win = if mid_win.dir.get_folder().unwrap().items[0].is_folder() {
+            MagWindow::new(
+                &mid_win.dir.get_folder_path(0).unwrap(),
+                Pos::new(1, START_TOP),
+                Pos::new(w_left, h - START_TOP),
+            )
+            .fetch_return()
+        } else {
+            MagWindow::new_file(
+                &mid_win.dir.get_folder_path(0).unwrap(),
+                Pos::new(1, START_TOP),
+                Pos::new(w_left, h - START_TOP),
+            )
+            .fetch_return()
+        };
 
         Ok(Self {
             parent_win,
@@ -84,55 +93,90 @@ impl State {
     }
 
     pub fn update(&mut self) -> std::io::Result<&mut Self> {
-        let (tx, rx) = mpsc::channel();
-        let mut thx_dir = MagFolder::new(&self.child_win.path);
-        let mut size = self.child_win.dir.get_folder().unwrap().items.len();
-        thx_dir.get_entries();
-
-        spawn(move || loop {
-            sleep(Duration::from_secs(1));
+        if self.child_win.dir.is_folder() {
+            let (tx, rx) = mpsc::channel();
+            let mut thx_dir = MagFolder::new(&self.child_win.path);
+            let mut size = self.child_win.dir.get_folder().unwrap().items.len();
             thx_dir.get_entries();
-            if thx_dir.items.len() != size {
-                tx.send(21312).unwrap();
-                size = thx_dir.items.len();
-            }
-        });
 
-        nodelay(stdscr(), true);
-
-        let mut ch = getch();
-        self.display();
-        while ch != 113 {
-            // Si no hay teclas presionadas, `getch()` devolverá ERR (-1)
-            if let Ok(value) = rx.try_recv() {
-                if value > 100 {
-                    self.child_win.fetch();
-                    self.display();
+            spawn(move || loop {
+                sleep(Duration::from_secs(1));
+                thx_dir.get_entries();
+                if thx_dir.items.len() != size {
+                    tx.send(21312).unwrap();
+                    size = thx_dir.items.len();
                 }
-            }
+            });
+            nodelay(stdscr(), true);
 
-            match ch {
-                104 => self.handle_movment_left()?,
-                //j
-                106 => self.handle_movment_down()?,
-                //k
-                107 => self.handle_movment_up()?,
-                //l
-                108 => self.handle_movment_right()?,
-                _ => {}
-            }
+            let mut ch = getch();
+            self.display();
+            while ch != 113 {
+                // Si no hay teclas presionadas, `getch()` devolverá ERR (-1)
+                if let Ok(value) = rx.try_recv() {
+                    if value > 100 {
+                        self.child_win.fetch();
+                        self.display();
+                    }
+                }
 
-            ch = getch();
-            sleep(Duration::from_millis(100));
+                self.display();
+                match ch {
+                    104 => self.handle_movment_left()?,
+                    //j
+                    106 => self.handle_movment_down()?,
+                    //k
+                    107 => self.handle_movment_up()?,
+                    //l
+                    108 => self.handle_movment_right()?,
+                    _ => {}
+                }
+
+                ch = getch();
+                sleep(Duration::from_millis(10));
+            }
+        } else {
+            self.display();
+            let mut ch = getch();
+            while ch != 113 {
+                match ch {
+                    //VIM movment keys
+                    //h
+                    104 => self.handle_movment_left()?,
+                    //j
+                    106 => self.handle_movment_down()?,
+                    //k
+                    107 => self.handle_movment_up()?,
+                    //l
+                    108 => self.handle_movment_right()?,
+                    _ => {}
+                }
+
+                ch = getch();
+            }
         }
 
         Ok(self)
     }
 
     fn handle_movment_down(&mut self) -> std::io::Result<()> {
+        if self.mid_win.idx < self.mid_win.dir.get_folder().unwrap().items.len() {
+            self.mid_win.idx += 1;
+            self.child_win.change_dir(
+                self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].get_path(),
+            );
+            wclear(self.child_win.win);
+            self.child_win.display();
+            self.mid_win.display();
+        }
+
         Ok(())
     }
     fn handle_movment_up(&mut self) -> std::io::Result<()> {
+        if self.mid_win.idx > 0 {
+            self.mid_win.idx -= 1;
+            self.mid_win.display();
+        }
         Ok(())
     }
     fn handle_movment_left(&mut self) -> std::io::Result<()> {

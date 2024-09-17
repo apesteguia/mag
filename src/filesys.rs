@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const FILE_READ_BYTES: usize = 256;
+const FILE_READ_BYTES: usize = 800;
 
 #[derive(Debug, Clone)]
 pub struct MagItem {
@@ -32,27 +32,35 @@ impl MagItem {
 #[derive(Debug, Clone)]
 pub struct MagFile {
     pub data: MagItem,
+    pub content: String,
 }
 
 impl MagFile {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         let path = path.as_ref().to_owned();
         let data = MagItem::new(&path);
+        let content = String::with_capacity(FILE_READ_BYTES);
 
-        Self { data }
+        Self { data, content }
     }
 
-    pub fn file_contents(&self) -> String {
+    pub fn file_contents(&mut self) {
         let mut buf = [0u8; FILE_READ_BYTES];
         let file = match File::open(&self.data.path) {
             Ok(f) => f,
-            Err(e) => return format!("{} {}", "can't open file".to_string(), e),
+            Err(e) => {
+                self.content = format!("{} {}", "can't open file".to_string(), e);
+                return;
+            }
         };
 
         match file.read_at(&mut buf, 0) {
-            Ok(_) => String::from_utf8_lossy(&buf).to_string(),
-            Err(e) => return format!("{} {}", "can't open file".to_string(), e),
-        }
+            Ok(_) => self.content = String::from_utf8_lossy(&buf).to_string(),
+            Err(e) => {
+                self.content = format!("{} {}", "can't open file".to_string(), e);
+                return;
+            }
+        };
     }
 }
 
@@ -224,6 +232,20 @@ impl MagEntry {
             MagEntry::File(file) => &file.data.path,
         }
     }
+
+    pub fn is_file(&self) -> bool {
+        match self {
+            MagEntry::Dir(_) => false,
+            MagEntry::File(_) => true,
+        }
+    }
+
+    pub fn is_folder(&self) -> bool {
+        match self {
+            MagEntry::Dir(_) => true,
+            MagEntry::File(_) => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -231,10 +253,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_file() {
-        let f = MagFile::new("/home/mikel/Escritorio/rust/mag/Cargo.toml");
-        let s = f.file_contents();
-        println!("{s}");
-        assert!(s.len() > 0);
+    fn file() {
+        let mut f = MagFile::new("/home/mikel/Escritorio/ruby/rb/rb/main.rb");
+        f.file_contents();
+        println!("{}", f.content);
     }
 }

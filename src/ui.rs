@@ -41,6 +41,25 @@ impl MagWindow {
         }
     }
 
+    pub fn new_file<P: AsRef<Path>>(path: P, coord: Pos<i32>, dimensions: Pos<i32>) -> Self {
+        let path = path.as_ref().to_owned();
+        let idx: usize = 0;
+        let my_pos = Pos::new(0, 0);
+
+        let win = newwin(dimensions.y, dimensions.x, coord.y, coord.x);
+        let dir = MagEntry::File(MagFile::new(&path));
+
+        Self {
+            path,
+            idx,
+            coord,
+            dimensions,
+            dir,
+            my_pos,
+            win,
+        }
+    }
+
     // TODO: VERY VERBOSE FUNCION
     pub fn display(&self) {
         match &self.dir {
@@ -77,11 +96,11 @@ impl MagWindow {
                 }
             }
             MagEntry::File(f) => {
-                let s = f.file_contents();
-                if s.is_empty() {
+                mvwprintw(self.win, 1, 1, "sdfasdf");
+                if f.content.is_empty() {
                     mvwprintw(self.win, 1, 1, "Empty File");
                 } else {
-                    let v: Vec<&str> = s.split('\n').collect();
+                    let v: Vec<&str> = f.content.split('\n').collect();
                     for (i, st) in v.iter().enumerate() {
                         mvwprintw(self.win, i as i32 + 2, 1, st);
                     }
@@ -91,24 +110,34 @@ impl MagWindow {
         wrefresh(self.win);
     }
 
+    pub fn change_dir<P: AsRef<Path>>(&mut self, path: P) {
+        let path = path.as_ref().to_owned();
+
+        match &self.dir {
+            MagEntry::File(_) => self.dir = MagEntry::File(MagFile::new(&path)),
+            MagEntry::Dir(_) => {
+                self.dir = MagEntry::Dir(MagFolder::new(&path).get_entries_return().unwrap())
+            }
+        }
+    }
+
     pub fn fetch_return(self) -> Self {
         match self.dir {
             MagEntry::File(f) => {
-                // Crea una nueva instancia de MagEntry::File con el contenido actualizado
-                let updated_file = MagFile::new(&f.data.path);
+                let mut updated_file = MagFile::new(&f.data.path);
+                updated_file.file_contents();
                 Self {
                     dir: MagEntry::File(updated_file),
-                    ..self // Copia los demás campos de self
+                    ..self
                 }
             }
             MagEntry::Dir(d) => {
-                // Crea una nueva instancia de MagEntry::Dir con el contenido actualizado
-                let mut updated_folder = d.clone(); // Asegúrate de que MagFolder implemente Clone
-                updated_folder.get_entries(); // Actualiza las entradas del directorio
+                let mut updated_folder = d.clone();
+                updated_folder.get_entries();
 
                 Self {
                     dir: MagEntry::Dir(updated_folder),
-                    ..self // Copia los demás campos de self
+                    ..self
                 }
             }
         }
