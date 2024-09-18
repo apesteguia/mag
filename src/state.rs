@@ -224,6 +224,20 @@ impl State {
     }
 
     fn handle_movment_right(&mut self) -> std::io::Result<()> {
+        if self.child_win.dir.is_folder() {
+            self.mid_win.idx = 0;
+            self.child_win.idx = 0;
+            self.parent_win.idx = 0;
+            std::mem::swap(&mut self.mid_win, &mut self.child_win);
+            std::mem::swap(&mut self.child_win, &mut self.parent_win);
+            self.child_win.change_dir(
+                self.mid_win.dir.get_folder_path(self.mid_win.idx).unwrap(),
+                true,
+            );
+            self.child_win.fetch();
+            self.display();
+        }
+
         Ok(())
     }
 
