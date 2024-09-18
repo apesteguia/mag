@@ -184,16 +184,42 @@ impl State {
     }
 
     fn handle_movment_up(&mut self) -> std::io::Result<()> {
-        if self.mid_win.idx > 0 {
+        //let len = self.mid_win.dir.get_folder().unwrap().items.len();
+        if self.mid_win.idx >= 1 {
             self.mid_win.idx -= 1;
+            if self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].is_folder() {
+                self.child_win.change_dir(
+                    self.mid_win.dir.get_folder().unwrap().items[self.mid_win.idx].get_path(),
+                    true,
+                );
+            } else {
+                self.child_win.change_dir(
+                    self.mid_win.dir.get_folder().expect("ESTOY AQUI").items[self.mid_win.idx]
+                        .get_path(),
+                    false,
+                );
+            }
+
             wclear(self.child_win.win);
             self.child_win.display();
             self.mid_win.display();
         }
+
         Ok(())
     }
 
     fn handle_movment_left(&mut self) -> std::io::Result<()> {
+        if self.parent_win.path.parent().is_some() {
+            self.mid_win.idx = 0;
+            self.child_win.idx = 0;
+            self.parent_win.idx = 0;
+            std::mem::swap(&mut self.mid_win, &mut self.parent_win);
+            std::mem::swap(&mut self.parent_win, &mut self.child_win);
+            self.parent_win
+                .change_dir(self.mid_win.path.parent().unwrap(), true);
+            self.parent_win.fetch();
+        }
+
         Ok(())
     }
 

@@ -48,7 +48,7 @@ impl MagFile {
     pub fn new_return<P: AsRef<Path>>(path: P) -> Self {
         let path = path.as_ref().to_owned();
         let data = MagItem::new(&path);
-        let mut content = String::with_capacity(FILE_READ_BYTES);
+        let mut content = String::with_capacity(FILE_READ_BYTES + 1);
         let mut buf = [0u8; FILE_READ_BYTES];
 
         let mut file = match File::open(&path) {

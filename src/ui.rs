@@ -96,7 +96,6 @@ impl MagWindow {
                 }
             }
             MagEntry::File(f) => {
-                mvwprintw(self.win, 1, 1, "sdfasdf");
                 if f.content.is_empty() {
                     mvwprintw(self.win, 1, 1, "Empty File");
                 } else {
@@ -113,6 +112,7 @@ impl MagWindow {
     pub fn change_dir<P: AsRef<Path>>(&mut self, path: P, is_folder: bool) {
         let path = path.as_ref().to_owned();
 
+        self.path = path.clone();
         match is_folder {
             false => self.dir = MagEntry::File(MagFile::new_return(&path)),
             true => self.dir = MagEntry::Dir(MagFolder::new(&path).get_entries_return().unwrap()),
