@@ -28,6 +28,13 @@ impl MagItem {
 
         Self { path, metadata }
     }
+
+    pub fn file_name(&self) -> String {
+        match self.path.file_name() {
+            Some(s) => s.to_string_lossy().to_string(),
+            None => String::from("CORRUPTED FILE NAME"),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -77,6 +84,7 @@ impl MagFile {
     }
 
     pub fn file_contents(&mut self) {
+        self.content.clear();
         let mut buf = [0u8; FILE_READ_BYTES];
         let file = match File::open(&self.data.path) {
             Ok(f) => f,
@@ -293,6 +301,13 @@ impl MagEntry {
     pub fn is_folder(&self) -> bool {
         match self {
             MagEntry::Dir(_) => true,
+            MagEntry::File(_) => false,
+        }
+    }
+
+    pub fn is_folder_empty(&self) -> bool {
+        match self {
+            MagEntry::Dir(d) => d.items.is_empty(),
             MagEntry::File(_) => false,
         }
     }

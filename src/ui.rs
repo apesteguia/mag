@@ -74,21 +74,21 @@ impl MagWindow {
                         wattron(self.win, COLOR_PAIR(5) | A_BOLD());
                         match i {
                             MagEntry::File(f) => {
-                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                                mvwprintw(self.win, c as i32 + 1, 2, &f.data.file_name());
                             }
                             MagEntry::Dir(f) => {
-                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                                mvwprintw(self.win, c as i32 + 1, 2, &f.data.file_name());
                             }
                         }
                         wattroff(self.win, COLOR_PAIR(5) | A_BOLD());
                     } else {
                         match i {
                             MagEntry::File(f) => {
-                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                                mvwprintw(self.win, c as i32 + 1, 2, &f.data.file_name());
                             }
                             MagEntry::Dir(f) => {
                                 wattron(self.win, COLOR_PAIR(4));
-                                mvwprintw(self.win, c as i32 + 1, 2, f.data.path.to_str().unwrap());
+                                mvwprintw(self.win, c as i32 + 1, 2, &f.data.file_name());
                                 wattroff(self.win, COLOR_PAIR(4));
                             }
                         }
@@ -107,6 +107,19 @@ impl MagWindow {
             }
         }
         wrefresh(self.win);
+    }
+
+    pub fn display_info(&self, std: WINDOW) {
+        let s = format!(
+            "{}{}",
+            &self.path.to_string_lossy(),
+            self.dir.get_folder().unwrap().items[self.idx]
+                .get_path()
+                .to_string_lossy()
+        );
+
+        mvwprintw(std, 1, 3, &s);
+        wrefresh(std);
     }
 
     pub fn change_dir<P: AsRef<Path>>(&mut self, path: P, is_folder: bool) {

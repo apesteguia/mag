@@ -13,7 +13,7 @@ fn main() {
             .unwrap()
             .exit();
     */
-    let _ = State::new("/home/mikel/")
+    let _ = State::new("/home/mikel/Escritorio/")
         .expect("ERROR CREATING STATE IN MAIN")
         .update()
         .expect("ERROR IN UPDATE")

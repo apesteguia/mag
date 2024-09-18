@@ -208,26 +208,24 @@ impl State {
         Ok(())
     }
 
+    // TODO: ROOT DIRECTORY DOESENT TURN TO MID WIN
     fn handle_movment_left(&mut self) -> std::io::Result<()> {
         if self.parent_win.path.parent().is_some() {
-            self.mid_win.idx = 0;
-            self.child_win.idx = 0;
-            self.parent_win.idx = 0;
             std::mem::swap(&mut self.mid_win, &mut self.parent_win);
             std::mem::swap(&mut self.parent_win, &mut self.child_win);
+            self.child_win.idx = 0;
             self.parent_win
                 .change_dir(self.mid_win.path.parent().unwrap(), true);
             self.parent_win.fetch();
+            self.display();
         }
 
         Ok(())
     }
 
     fn handle_movment_right(&mut self) -> std::io::Result<()> {
-        if self.child_win.dir.is_folder() {
-            self.mid_win.idx = 0;
+        if self.child_win.dir.is_folder() && !self.child_win.dir.is_folder_empty() {
             self.child_win.idx = 0;
-            self.parent_win.idx = 0;
             std::mem::swap(&mut self.mid_win, &mut self.child_win);
             std::mem::swap(&mut self.child_win, &mut self.parent_win);
             self.child_win.change_dir(
@@ -247,11 +245,11 @@ impl State {
         //box_(self.parent_win.win, 0, 0);
         //box_(self.mid_win.win, 0, 0);
         // clear();
-        mvwprintw(stdscr(), 0, 1, &self.mid_win.path.to_string_lossy());
+
         self.mid_win.display();
+        self.mid_win.display_info(stdscr());
         self.parent_win.display();
         self.child_win.display();
-        refresh();
     }
 
     fn resize(&mut self) {
