@@ -240,12 +240,12 @@ impl State {
     }
 
     fn display(&mut self) {
-        self.resize();
         //box_(self.child_win.win, 0, 0);
         //box_(self.parent_win.win, 0, 0);
         //box_(self.mid_win.win, 0, 0);
         // clear();
 
+        self.resize();
         self.mid_win.display();
         self.mid_win.display_info(stdscr());
         self.parent_win.display();
